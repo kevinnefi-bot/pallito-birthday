@@ -1,0 +1,16 @@
+# Original uncompressed photo archive — not needed for the website
+Photos-1-001/
+Photos-1-001.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor directories
+.vscode/
+.idea/
+
+# Local env files
+*.env
+.env*
