@@ -1,6 +1,11 @@
 import * as THREE from 'three'
 import { gsap } from 'gsap'
-import { makeTextSprite, makeGlowLight, makeParticles } from '../utils/three-helpers.js'
+import {
+  makeTextSprite,
+  makeGlowLight,
+  makeParticles,
+  createDetailedEnvelope
+} from '../utils/three-helpers.js'
 
 export class LetterScene {
   constructor({ scene, camera, manager }) {
@@ -25,7 +30,6 @@ export class LetterScene {
     this.group.visible = false
     this.scene.add(this.group)
 
-    // Wire letter close button
     const closeBtn = document.getElementById('letter-close')
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
@@ -35,79 +39,48 @@ export class LetterScene {
   }
 
   _buildLights() {
-    const ambient = new THREE.AmbientLight(0x280d38, 0.9)
-    const softPink = makeGlowLight(0xff6eb4, 80, 20, -3, 3, 2, 0.1)
-    const softLilac = makeGlowLight(0xc084fc, 80, 20, 3, 3, 1, 0.1)
-    const centerSpot = new THREE.SpotLight(0xfff5ea, 35)
-    centerSpot.position.set(0, 5, 5)
-    centerSpot.penumbra = 0.6
-    this.group.add(ambient, softPink, softLilac, centerSpot)
+    const ambient = new THREE.AmbientLight(0x2d0b3f, 0.95)
+    const softRose = makeGlowLight(0xff6eb4, 85, 22, -3.5, 3.5, 2.5, 0.1)
+    const softViolet = makeGlowLight(0xc084fc, 85, 22, 3.5, 3.5, 1.5, 0.1)
+    const keySpot = new THREE.SpotLight(0xfff7ed, 40)
+    keySpot.position.set(0, 6, 6)
+    keySpot.penumbra = 0.7
+
+    this.group.add(ambient, softRose, softViolet, keySpot)
   }
 
   _buildEnvelope() {
-    this.envelopeGroup = new THREE.Group()
+    const env = createDetailedEnvelope()
+    this.env = env
+    this.envelopeGroup = env.envelopeGroup
+    this.flapPivot = env.flapPivot
+    this.sealGroup = env.sealGroup
+    this.letterPaper = env.letterPaper
 
-    // Envelope body
-    const bodyGeo = new THREE.BoxGeometry(2.8, 1.9, 0.1)
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0xfce7f3,
-      roughness: 0.5,
-      metalness: 0.05
+    // Scrapbook Header Banner
+    const titleSprite = makeTextSprite('LA CARTA DE CUMPLEAÑOS 💌\n«lo que de verdad quería decirte de corazón»', {
+      fontSize: 40,
+      fontFace: 'Pacifico, cursive',
+      color: '#fff0f8',
+      bgColor: 'rgba(28, 4, 42, 0.85)',
+      borderColor: '#ff6eb4',
+      tapeTop: true,
+      padding: 22,
+      scale: 4.8
     })
-    const body = new THREE.Mesh(bodyGeo, bodyMat)
-    body.castShadow = true
-    this.envelopeGroup.add(body)
+    titleSprite.position.set(0, 3.4, 0)
+    this.group.add(titleSprite)
 
-    // Wax seal in the center
-    const sealGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.08, 24)
-    const sealMat = new THREE.MeshStandardMaterial({
-      color: 0x9333ea,
-      emissive: 0x7e22ce,
-      emissiveIntensity: 0.4,
-      roughness: 0.3
-    })
-    const seal = new THREE.Mesh(sealGeo, sealMat)
-    seal.rotation.x = Math.PI / 2
-    seal.position.set(0, 0, 0.08)
-    this.envelopeGroup.add(seal)
-
-    // Heart icon on seal
-    const sealText = makeTextSprite('💜', { fontSize: 32, padding: 4, scale: 0.5 })
-    sealText.position.set(0, 0, 0.13)
-    this.envelopeGroup.add(sealText)
-
-    // Flap
-    const flapGeo = new THREE.ConeGeometry(1.4, 0.95, 3)
-    const flapMat = new THREE.MeshStandardMaterial({
-      color: 0xf5d0fe,
-      roughness: 0.5
-    })
-    this.flap = new THREE.Mesh(flapGeo, flapMat)
-    this.flap.rotation.z = Math.PI
-    this.flap.position.set(0, 0.48, 0.06)
-    this.flapPivot = new THREE.Group()
-    this.flapPivot.position.set(0, 0.95, 0.05)
-    this.flap.position.set(0, -0.475, 0.01)
-    this.flapPivot.add(this.flap)
-    this.envelopeGroup.add(this.flapPivot)
-
-    // Envelope Letter Paper (peeking out)
-    const paperGeo = new THREE.BoxGeometry(2.5, 1.7, 0.04)
-    const paperMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 })
-    this.letterPaper = new THREE.Mesh(paperGeo, paperMat)
-    this.letterPaper.position.set(0, 0, -0.01)
-    this.envelopeGroup.add(this.letterPaper)
-
-    // Hint sprite under envelope
-    this.envHint = makeTextSprite('💌 Toca el sobre para abrir la carta 💌', {
-      fontSize: 32,
-      color: '#ffd6ec',
+    // Hint Sprite below envelope
+    this.envHint = makeTextSprite('💌 Toca el sobre para romper el sello y abrir la carta 💌', {
+      fontSize: 30,
       fontFace: 'Indie Flower, cursive',
-      bgColor: 'rgba(20, 5, 35, 0.75)',
-      padding: 12,
+      color: '#ffd6ec',
+      bgColor: 'rgba(25, 4, 38, 0.8)',
+      padding: 14,
       scale: 2.2
     })
-    this.envHint.position.set(0, -1.4, 0.2)
+    this.envHint.position.set(0, -1.5, 0.3)
     this.envelopeGroup.add(this.envHint)
 
     this.envelopeGroup.position.set(0, 0, 0)
@@ -115,68 +88,60 @@ export class LetterScene {
   }
 
   _buildDivergentPaths() {
-    // Two glowing curved light paths in the background symbolizing:
-    // "A veces los caminos no siempre van uno al lado del otro, pero eso no significa que sea el final"
+    // Two glowing luminous curves in the background symbolizing:
+    // "A veces los caminos no van uno al lado del otro, pero eso no significa que sea el final"
     const curve1 = new THREE.CubicBezierCurve3(
-      new THREE.Vector3(0, -2.5, -4),
-      new THREE.Vector3(-1.5, 0, -5),
-      new THREE.Vector3(-3.5, 2.5, -6),
-      new THREE.Vector3(-6, 5, -8)
+      new THREE.Vector3(0, -3.0, -5),
+      new THREE.Vector3(-1.8, 0, -6),
+      new THREE.Vector3(-4.0, 3.0, -7),
+      new THREE.Vector3(-7.5, 6.0, -9)
     )
 
     const curve2 = new THREE.CubicBezierCurve3(
-      new THREE.Vector3(0, -2.5, -4),
-      new THREE.Vector3(1.5, 0, -5),
-      new THREE.Vector3(3.5, 2.5, -6),
-      new THREE.Vector3(6, 5, -8)
+      new THREE.Vector3(0, -3.0, -5),
+      new THREE.Vector3(1.8, 0, -6),
+      new THREE.Vector3(4.0, 3.0, -7),
+      new THREE.Vector3(7.5, 6.0, -9)
     )
 
-    const tubeGeo1 = new THREE.TubeGeometry(curve1, 32, 0.06, 8, false)
-    const tubeGeo2 = new THREE.TubeGeometry(curve2, 32, 0.06, 8, false)
+    const tubeGeo1 = new THREE.TubeGeometry(curve1, 40, 0.08, 12, false)
+    const tubeGeo2 = new THREE.TubeGeometry(curve2, 40, 0.08, 12, false)
 
-    const pathMat1 = new THREE.MeshStandardMaterial({
+    const mat1 = new THREE.MeshStandardMaterial({
       color: 0xff6eb4,
-      emissive: 0xff6eb4,
-      emissiveIntensity: 0.8
+      emissive: 0xff007f,
+      emissiveIntensity: 0.85,
+      roughness: 0.2
     })
-    const pathMat2 = new THREE.MeshStandardMaterial({
-      color: 0xa855f7,
-      emissive: 0xa855f7,
-      emissiveIntensity: 0.8
+    const mat2 = new THREE.MeshStandardMaterial({
+      color: 0x9d4edd,
+      emissive: 0x7c3aed,
+      emissiveIntensity: 0.85,
+      roughness: 0.2
     })
 
-    const p1 = new THREE.Mesh(tubeGeo1, pathMat1)
-    const p2 = new THREE.Mesh(tubeGeo2, pathMat2)
+    const p1 = new THREE.Mesh(tubeGeo1, mat1)
+    const p2 = new THREE.Mesh(tubeGeo2, mat2)
     this.group.add(p1, p2)
   }
 
   _buildAtmosphere() {
-    this.particles = makeParticles(150, 20, 0xfce7f3, 0.04)
-    this.group.add(this.particles)
-
-    const titleSprite = makeTextSprite('LA CARTA DE CUMPLEAÑOS 💌\n«lo que de verdad quería decirte»', {
-      fontSize: 42,
-      color: '#ffd6ec',
-      fontFace: 'Pacifico, cursive',
-      bgColor: 'rgba(20, 5, 30, 0.7)',
-      padding: 16,
-      scale: 4.4
-    })
-    titleSprite.position.set(0, 3.2, 0)
-    this.group.add(titleSprite)
+    this.roseDust = makeParticles(160, 20, 0xfce7f3, 0.04)
+    this.violetDust = makeParticles(120, 18, 0xc084fc, 0.04)
+    this.group.add(this.roseDust, this.violetDust)
   }
 
   async enter() {
     this.opened = false
     this.group.visible = true
 
-    this.camera.position.set(0, 0.2, 5.8)
+    this.camera.position.set(0, 0.3, 6.2)
     this.camera.lookAt(0, 0, 0)
-    gsap.from(this.camera.position, { z: 10, y: 2, duration: 1.5, ease: 'power3.out' })
+    gsap.from(this.camera.position, { z: 11, y: 2.5, duration: 1.6, ease: 'power3.out' })
 
-    // Envelope entrance bounce
+    // Envelope entrance scale
     this.envelopeGroup.scale.set(0, 0, 0)
-    gsap.to(this.envelopeGroup.scale, { x: 1, y: 1, z: 1, duration: 0.9, ease: 'back.out(1.6)' })
+    gsap.to(this.envelopeGroup.scale, { x: 1, y: 1, z: 1, duration: 1.0, ease: 'back.out(1.6)' })
 
     this.manager.setHint('Toca el sobre para abrir la carta 💌', 5000)
 
@@ -194,11 +159,12 @@ export class LetterScene {
 
   update(delta) {
     const t = performance.now() * 0.001
-    if (this.particles) this.particles.rotation.y += delta * 0.02
+    if (this.roseDust) this.roseDust.rotation.y += delta * 0.02
+    if (this.violetDust) this.violetDust.rotation.y -= delta * 0.015
 
     if (!this.opened && this.envelopeGroup) {
-      this.envelopeGroup.position.y = Math.sin(t * 1.5) * 0.08
-      this.envelopeGroup.rotation.y = Math.sin(t * 0.8) * 0.06
+      this.envelopeGroup.position.y = Math.sin(t * 1.4) * 0.07
+      this.envelopeGroup.rotation.y = Math.sin(t * 0.7) * 0.05
     }
   }
 
@@ -237,19 +203,23 @@ export class LetterScene {
 
     const tl = gsap.timeline()
 
-    // Flap opens up
-    tl.to(this.flapPivot.rotation, { x: Math.PI * 0.85, duration: 0.6, ease: 'power2.out' })
+    // 1. Lift wax seal
+    tl.to(this.sealGroup.position, { z: 0.4, y: 0.6, duration: 0.4, ease: 'power2.out' })
+    tl.to(this.sealGroup.scale, { x: 0, y: 0, z: 0, duration: 0.3, ease: 'power2.in' }, '-=0.1')
 
-    // Letter paper slides upwards out of envelope
-    tl.to(this.letterPaper.position, { y: 1.5, z: 0.15, duration: 0.8, ease: 'power2.out' }, '-=0.2')
+    // 2. Unfold envelope flap
+    tl.to(this.flapPivot.rotation, { x: Math.PI * 0.88, duration: 0.7, ease: 'power2.out' }, '-=0.2')
 
-    // Camera zooms smoothly toward paper
-    tl.to(this.camera.position, { z: 3.5, y: 0.8, duration: 1.0, ease: 'power2.inOut' }, '-=0.5')
+    // 3. Letter paper slides smoothly out of envelope
+    tl.to(this.letterPaper.position, { y: 1.6, z: 0.18, duration: 0.9, ease: 'power2.out' }, '-=0.3')
 
-    // Open HTML overlay for perfect reading comfort
+    // 4. Camera zooms gently into the parchment
+    tl.to(this.camera.position, { z: 3.6, y: 0.85, duration: 1.1, ease: 'power2.inOut' }, '-=0.6')
+
+    // 5. Open Reading Overlay with maximum legibility
     setTimeout(() => {
       document.getElementById('letter-overlay').classList.add('open')
-    }, 1100)
+    }, 1200)
   }
 
   _closeLetter() {
@@ -257,9 +227,11 @@ export class LetterScene {
     this.opened = false
 
     const tl = gsap.timeline()
-    tl.to(this.letterPaper.position, { y: 0, z: -0.01, duration: 0.6, ease: 'power2.in' })
+    tl.to(this.letterPaper.position, { y: 0.05, z: -0.01, duration: 0.6, ease: 'power2.in' })
     tl.to(this.flapPivot.rotation, { x: 0, duration: 0.5, ease: 'power2.in' }, '-=0.2')
-    tl.to(this.camera.position, { z: 5.8, y: 0.2, duration: 0.8, ease: 'power2.out' }, '-=0.4')
+    tl.to(this.sealGroup.scale, { x: 1, y: 1, z: 1, duration: 0.4, ease: 'back.out(1.5)' })
+    tl.to(this.sealGroup.position, { z: 0.08, y: 0.25, duration: 0.4 }, '-=0.4')
+    tl.to(this.camera.position, { z: 6.2, y: 0.3, duration: 0.9, ease: 'power2.out' }, '-=0.4')
 
     this.manager.setHint('Puedes volver a abrir la carta cuando quieras 💌', 3000)
   }

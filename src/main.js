@@ -30,18 +30,34 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.1
+renderer.toneMappingExposure = 1.15
 
 // ─── Scene & Camera ───
 const scene = new THREE.Scene()
-scene.fog = new THREE.FogExp2(0x0a0010, 0.04)
+scene.fog = new THREE.FogExp2(0x0c0114, 0.038)
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200)
-camera.position.set(0, 1, 10)
+camera.position.set(0, 1.2, 10)
 camera.lookAt(0, 0, 0)
 
 // ─── Scene Manager ───
 const manager = new SceneManager(scene, camera, renderer)
+
+// ─── Smooth Parallax Controller ───
+let targetMouseX = 0
+let targetMouseY = 0
+
+window.addEventListener('mousemove', (e) => {
+  targetMouseX = (e.clientX / window.innerWidth - 0.5) * 0.45
+  targetMouseY = (e.clientY / window.innerHeight - 0.5) * 0.35
+})
+
+window.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 0) {
+    targetMouseX = (e.touches[0].clientX / window.innerWidth - 0.5) * 0.4
+    targetMouseY = (e.touches[0].clientY / window.innerHeight - 0.5) * 0.3
+  }
+}, { passive: true })
 
 // ─── Resize ───
 window.addEventListener('resize', () => {
@@ -65,6 +81,11 @@ const clock = new THREE.Clock()
 function animate() {
   requestAnimationFrame(animate)
   const delta = Math.min(clock.getDelta(), 0.05)
+
+  // Butter-smooth stereoscopic parallax on the 3D world
+  scene.position.x = THREE.MathUtils.lerp(scene.position.x, -targetMouseX, 0.06)
+  scene.position.y = THREE.MathUtils.lerp(scene.position.y, targetMouseY, 0.06)
+
   manager.update(delta)
   renderer.render(scene, camera)
 }
