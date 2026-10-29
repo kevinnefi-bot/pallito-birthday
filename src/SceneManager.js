@@ -7,14 +7,17 @@ import { FinalScene }  from './scenes/FinalScene.js'
 
 export class SceneManager {
   constructor(scene, camera, renderer) {
-    this.scene    = scene
-    this.camera   = camera
+    this.scene = scene
+    this.camera = camera
     this.renderer = renderer
-    this.scenes   = {}
-    this.current  = null
+    this.scenes = {}
+    this.current = null
     this.transitioning = false
-    this.hint     = document.getElementById('hint')
+    this.hint = document.getElementById('hint')
     this.hintText = document.getElementById('hint-text')
+
+    this.musicPlayer = null
+    this.photoGallery = null
   }
 
   async init() {
@@ -26,10 +29,9 @@ export class SceneManager {
     this.scenes.letter = new LetterScene(ctx)
     this.scenes.final  = new FinalScene(ctx)
 
-    for (const s of Object.values(this.scenes)) await s.init()
-
-    // Simulate loading
-    await new Promise(r => setTimeout(r, 400))
+    for (const s of Object.values(this.scenes)) {
+      await s.init()
+    }
   }
 
   async transitionTo(name) {
@@ -37,22 +39,38 @@ export class SceneManager {
     this.transitioning = true
 
     const next = this.scenes[name]
-    if (!next) { this.transitioning = false; return }
+    if (!next) {
+      this.transitioning = false
+      return
+    }
 
-    // Update nav
+    // 1. Update Navigation Buttons
     document.querySelectorAll('.nav-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.scene === name)
     })
 
-    // Fade out current scene with camera pull-back
+    // 2. Hide current DOM UI
+    document.querySelectorAll('.scene-overlay-ui').forEach(el => {
+      el.classList.remove('active')
+    })
+
+    // 3. Exit current 3D Scene
     if (this.current) {
       await this.current.exit()
     }
 
-    // Black flash transition
+    // 4. Subtle cinematic flash transition
     await this._flash()
 
-    // Enter new scene
+    // 5. Activate new DOM UI
+    const targetUI = document.getElementById(`scene-${name}-ui`)
+    if (targetUI) {
+      targetUI.classList.add('active')
+      // Reset scroll to top if needed
+      targetUI.scrollTop = 0
+    }
+
+    // 6. Enter new 3D Scene
     this.current = next
     this.current.name = name
     await next.enter()
@@ -64,13 +82,13 @@ export class SceneManager {
     return new Promise(resolve => {
       const overlay = document.createElement('div')
       overlay.style.cssText = `
-        position:fixed;inset:0;background:#0a0010;z-index:400;
-        pointer-events:none;opacity:0;
+        position: fixed; inset: 0; background: #0b0114; z-index: 400;
+        pointer-events: none; opacity: 0;
       `
       document.body.appendChild(overlay)
       gsap.timeline({ onComplete: () => { overlay.remove(); resolve() } })
-        .to(overlay, { opacity: 1, duration: .25, ease: 'power2.in' })
-        .to(overlay, { opacity: 0, duration: .4,  ease: 'power2.out', delay: .05 })
+        .to(overlay, { opacity: 0.85, duration: 0.2, ease: 'power2.in' })
+        .to(overlay, { opacity: 0, duration: 0.35, ease: 'power2.out', delay: 0.05 })
     })
   }
 
@@ -79,14 +97,18 @@ export class SceneManager {
   }
 
   setHint(text, duration = 0) {
+    if (!this.hintText || !this.hint) return
     this.hintText.textContent = text
     this.hint.classList.remove('hidden')
     if (duration > 0) {
-      setTimeout(() => this.hint.classList.add('hidden'), duration)
+      if (this._hintTimeout) clearTimeout(this._hintTimeout)
+      this._hintTimeout = setTimeout(() => this.hideHint(), duration)
     }
   }
 
   hideHint() {
-    this.hint.classList.add('hidden')
+    if (this.hint) {
+      this.hint.classList.add('hidden')
+    }
   }
 }

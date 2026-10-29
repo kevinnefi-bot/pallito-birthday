@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import { gsap }   from 'gsap'
+import { gsap } from 'gsap'
 import {
-  makeTextSprite,
   makeParticles,
   makeGlowLight,
   createLuxuryGiftBox
@@ -9,53 +8,73 @@ import {
 
 export class IntroScene {
   constructor({ scene, camera, manager }) {
-    this.scene   = scene
-    this.camera  = camera
+    this.scene = scene
+    this.camera = camera
     this.manager = manager
-    this.group   = new THREE.Group()
-    this.titleGroup = new THREE.Group()
-    this.opened  = false
+    this.group = new THREE.Group()
+
+    this.opened = false
+    this.animating = false
+    this.sparkles = []
+
     this._raycaster = new THREE.Raycaster()
-    this._pointer   = new THREE.Vector2()
+    this._pointer = new THREE.Vector2()
     this._onClickBound = this._onClick.bind(this)
     this._onTouchBound = this._onTouch.bind(this)
   }
 
   async init() {
     this._buildStars()
-    this._buildGiftBox()
-    this._buildScrapbookNotes()
-    this._buildTitleGroup()
     this._buildLights()
-    this._buildAtmosphere()
+    this._buildGiftBox()
+    this._buildSparkleSystem()
 
     this.group.visible = false
-    this.titleGroup.visible = false
     this.scene.add(this.group)
-    this.scene.add(this.titleGroup)
+
+    // Wire HTML button
+    const openBtn = document.getElementById('btn-open-gift')
+    if (openBtn) {
+      openBtn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.openGift()
+      })
+    }
   }
 
   _buildStars() {
     const geo = new THREE.BufferGeometry()
-    const pos = new Float32Array(3600)
-    for (let i = 0; i < 1200; i++) {
-      const r = 50 + Math.random() * 50
-      const phi   = Math.acos(2 * Math.random() - 1)
+    const pos = new Float32Array(3000)
+    for (let i = 0; i < 1000; i++) {
+      const r = 40 + Math.random() * 40
+      const phi = Math.acos(2 * Math.random() - 1)
       const theta = 2 * Math.PI * Math.random()
-      pos[i * 3]     = r * Math.sin(phi) * Math.cos(theta)
+      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta)
       pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
       pos[i * 3 + 2] = r * Math.cos(phi)
     }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
     const mat = new THREE.PointsMaterial({
       color: 0xffd6ec,
-      size: 0.16,
+      size: 0.18,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.75
+      opacity: 0.65
     })
     this.stars = new THREE.Points(geo, mat)
     this.scene.add(this.stars)
+  }
+
+  _buildLights() {
+    const ambient = new THREE.AmbientLight(0x280540, 1.2)
+    const softPink = makeGlowLight(0xf472b6, 90, 22, -3.5, 3, 3, 0.12)
+    const softLilac = makeGlowLight(0xc084fc, 90, 22, 3.5, 3, -2, 0.12)
+    const mainSpot = new THREE.SpotLight(0xfff7ed, 45)
+    mainSpot.position.set(0, 6, 6)
+    mainSpot.penumbra = 0.6
+    mainSpot.castShadow = true
+
+    this.group.add(ambient, softPink, softLilac, mainSpot)
   }
 
   _buildGiftBox() {
@@ -66,118 +85,49 @@ export class IntroScene {
     this.lidPivot = lidPivot
     this._clickTargets = clickTargets
 
-    // Fairy glow inside box waiting to burst out
-    this.boxInteriorLight = new THREE.PointLight(0xff00d4, 0, 8)
-    this.boxInteriorLight.position.set(0, 0.4, 0)
-    this.boxGroup.add(this.boxInteriorLight)
+    // Glowing core inside gift box
+    this.interiorLight = new THREE.PointLight(0xff00d4, 0, 10)
+    this.interiorLight.position.set(0, 0.3, 0)
+    this.boxGroup.add(this.interiorLight)
 
-    this.boxGroup.position.set(0, -0.2, 0)
+    // Position box in lower center of view
+    this.boxGroup.position.set(0, -0.6, 0)
+    this.boxGroup.scale.set(1.2, 1.2, 1.2)
     this.group.add(this.boxGroup)
   }
 
-  _buildScrapbookNotes() {
-    const notes = [
-      { text: '«bueno pallito, hice una cosa xd»',   pos: [-3.4, 1.8, -0.5], delay: 0.4, rot: -0.06 },
-      { text: '«no es una plantilla de capcut 🎬»',   pos: [3.4, 2.0, -1.2], delay: 0.9, rot: 0.05 },
-      { text: '«tampoco es copiado de internet»',    pos: [-3.2, -0.8, -0.8], delay: 1.4, rot: 0.04 },
-      { text: '«me dio por hacer esto, ahora aguántate»', pos: [3.2, -0.9, -1.0], delay: 1.9, rot: -0.05 }
-    ]
-
-    this.noteSprites = []
-    notes.forEach(({ text, pos, delay, rot }) => {
-      const sprite = makeTextSprite(text, {
-        fontSize: 34,
-        color: '#ffd6ec',
-        fontFace: 'Indie Flower, cursive',
-        bgColor: 'rgba(30, 8, 48, 0.85)',
-        borderColor: '#a855f7',
-        tapeTop: true,
-        padding: 16,
-        scale: 2.7
-      })
-      sprite.position.set(...pos)
-      sprite.material.opacity = 0
-      this.group.add(sprite)
-      this.noteSprites.push({ sprite, delay, rot })
-    })
-  }
-
-  _buildTitleGroup() {
-    // 3D Scrapbook Header Banner
-    const main = makeTextSprite('FELIZ CUMPLEAÑOS\nPALLITO LAS PATAS 🎂💜', {
-      fontSize: 66,
-      color: '#fff0f8',
-      fontFace: 'Pacifico, cursive',
-      bold: true,
-      bgColor: 'rgba(25, 4, 40, 0.88)',
-      borderColor: '#ff6eb4',
-      padding: 26,
-      scale: 6.8
-    })
-    main.position.set(0, 1.8, 0)
-    this.titleGroup.add(main)
-
-    const sub = makeTextSprite('by Kev, yo pues quién más xd ✨\n«+10000 de aura acumulada hoy»', {
-      fontSize: 36,
-      color: '#ffd6ec',
-      fontFace: 'Indie Flower, cursive',
-      bgColor: 'rgba(40, 10, 60, 0.8)',
-      padding: 16,
-      scale: 4.2
-    })
-    sub.position.set(0, -0.8, 0)
-    this.titleGroup.add(sub)
-
-    const hint = makeTextSprite('👇  Usa la barra inferior para explorar el universo  👇', {
-      fontSize: 28,
-      color: '#e9d5ff',
-      bgColor: 'rgba(15, 0, 30, 0.75)',
-      padding: 12,
-      scale: 3.2
-    })
-    hint.position.set(0, -2.4, 0)
-    this.titleGroup.add(hint)
-  }
-
-  _buildLights() {
-    const ambient = new THREE.AmbientLight(0x2d0b4d, 0.85)
-    this.group.add(ambient)
-
-    // Key magenta and violet rim lights
-    this.pinkLight = makeGlowLight(0xff3399, 110, 25, -4, 4, 3, 0.12)
-    this.purpleLight = makeGlowLight(0x9d4edd, 100, 25, 4, 3, -2, 0.12)
-    this.warmTopLight = new THREE.DirectionalLight(0xfff5ea, 1.2)
-    this.warmTopLight.position.set(0, 8, 4)
-    this.warmTopLight.castShadow = true
-
-    this.group.add(this.pinkLight, this.purpleLight, this.warmTopLight)
-  }
-
-  _buildAtmosphere() {
-    this.fairyDust = makeParticles(240, 22, 0xff77cc, 0.05)
-    this.goldenDust = makeParticles(160, 18, 0xfcd34d, 0.04)
-    this.group.add(this.fairyDust, this.goldenDust)
+  _buildSparkleSystem() {
+    this.ambientParticles = makeParticles(120, 18, 0xfce7f3, 0.04)
+    this.group.add(this.ambientParticles)
   }
 
   async enter() {
     this.opened = false
+    this.animating = false
     this.group.visible = true
-    this.titleGroup.visible = false
 
-    this.camera.position.set(0, 1.8, 9.5)
-    this.camera.lookAt(0, 0, 0)
-    gsap.from(this.camera.position, { z: 15, y: 3.5, duration: 1.8, ease: 'power3.out' })
+    this.camera.position.set(0, 0.8, 6.2)
+    this.camera.lookAt(0, -0.2, 0)
+    gsap.from(this.camera.position, { z: 10, y: 3, duration: 1.4, ease: 'power3.out' })
 
-    this.manager.setHint('Toca la caja de regalo para abrir tu sorpresa 🎁', 6000)
-
-    // Intro gift pop-in
+    // Box entrance bounce
     this.boxGroup.scale.set(0, 0, 0)
-    gsap.to(this.boxGroup.scale, { x: 1, y: 1, z: 1, duration: 1.0, ease: 'back.out(1.8)' })
-
-    // Staggered note sprites fade-in
-    this.noteSprites.forEach(({ sprite, delay }) => {
-      gsap.to(sprite.material, { opacity: 1, duration: 0.7, delay: delay + 0.4, ease: 'power2.out' })
+    gsap.to(this.boxGroup.scale, {
+      x: 1.2, y: 1.2, z: 1.2,
+      duration: 1.1,
+      ease: 'back.out(1.5)'
     })
+
+    // Reset lid rotation
+    if (this.lidPivot) {
+      this.lidPivot.rotation.x = 0
+      this.lidPivot.position.y = 0.85
+    }
+    if (this.interiorLight) {
+      this.interiorLight.intensity = 0
+    }
+
+    this.manager.setHint('Toca la caja de regalo para abrirla ✨', 4500)
 
     window.addEventListener('click', this._onClickBound)
     window.addEventListener('touchend', this._onTouchBound, { passive: true })
@@ -187,117 +137,85 @@ export class IntroScene {
     window.removeEventListener('click', this._onClickBound)
     window.removeEventListener('touchend', this._onTouchBound)
     this.manager.hideHint()
-
-    await new Promise(r => {
-      gsap.to(this.group, { duration: 0.35, onComplete: r })
-    })
     this.group.visible = false
-    this.titleGroup.visible = false
   }
 
   update(delta) {
     const t = performance.now() * 0.001
-    if (this.boxGroup && !this.opened) {
-      this.boxGroup.position.y = -0.2 + Math.sin(t * 1.3) * 0.1
-      this.boxGroup.rotation.y += delta * 0.22
+
+    if (this.stars) {
+      this.stars.rotation.y += delta * 0.015
     }
 
-    if (this.fairyDust) this.fairyDust.rotation.y += delta * 0.03
-    if (this.goldenDust) this.goldenDust.rotation.y -= delta * 0.02
-    if (this.stars) this.stars.rotation.y += delta * 0.004
+    if (this.ambientParticles) {
+      this.ambientParticles.rotation.y += delta * 0.02
+    }
 
-    if (this.titleGroup.visible) {
-      this.titleGroup.position.y = Math.sin(t * 0.8) * 0.08
+    // Gentle floating for unopened box
+    if (!this.opened && !this.animating && this.boxGroup) {
+      this.boxGroup.position.y = -0.6 + Math.sin(t * 1.5) * 0.06
+      this.boxGroup.rotation.y = Math.sin(t * 0.8) * 0.08
     }
   }
 
   _onClick(e) {
-    if (this.opened) return
+    if (e.target.closest('#scene-nav') || e.target.closest('#music-dock') || e.target.closest('.hero-card')) return
     const ndc = {
-      x:  (e.clientX / window.innerWidth)  * 2 - 1,
+      x: (e.clientX / window.innerWidth) * 2 - 1,
       y: -(e.clientY / window.innerHeight) * 2 + 1
     }
     this._checkHit(ndc)
   }
 
   _onTouch(e) {
-    if (this.opened) return
-    const t = e.changedTouches[0]
+    if (e.changedTouches[0].target.closest('#scene-nav') || e.changedTouches[0].target.closest('#music-dock') || e.changedTouches[0].target.closest('.hero-card')) return
+    const touch = e.changedTouches[0]
     const ndc = {
-      x:  (t.clientX / window.innerWidth)  * 2 - 1,
-      y: -(t.clientY / window.innerHeight) * 2 + 1
+      x: (touch.clientX / window.innerWidth) * 2 - 1,
+      y: -(touch.clientY / window.innerHeight) * 2 + 1
     }
     this._checkHit(ndc)
   }
 
   _checkHit(ndc) {
+    if (this.opened || this.animating) return
     this._pointer.set(ndc.x, ndc.y)
     this._raycaster.setFromCamera(this._pointer, this.camera)
-    const hits = this._raycaster.intersectObjects(this._clickTargets, true)
-    if (hits.length > 0) this._openBox()
-  }
 
-  _openBox() {
-    this.opened = true
-    this.manager.hideHint()
-
-    const tl = gsap.timeline({ onComplete: () => this._revealTitle() })
-
-    // Hinge lid open smoothly
-    tl.to(this.lidPivot.rotation, {
-      x: -Math.PI * 0.88,
-      duration: 1.2,
-      ease: 'back.out(1.4)'
-    })
-
-    // Magical light burst from interior
-    tl.to(this.boxInteriorLight, { intensity: 450, duration: 0.4, ease: 'power4.out' }, '-=0.4')
-    tl.to(this.boxInteriorLight, { intensity: 80, duration: 0.8, ease: 'power2.in' })
-
-    // Camera dramatic swoosh
-    tl.to(this.camera.position, { z: 5.5, y: 2.8, duration: 1.5, ease: 'power2.inOut' }, '-=1.1')
-
-    this._burstParticles()
-  }
-
-  _burstParticles() {
-    for (let i = 0; i < 4; i++) {
-      const burst = makeParticles(90, 4.5, i % 2 === 0 ? 0xff00aa : 0xfcd34d, 0.08)
-      burst.position.set(0, 0.5, 0)
-      this.group.add(burst)
-
-      gsap.to(burst.position, { y: 4.5, duration: 1.8, ease: 'power2.out' })
-      gsap.to(burst.material, {
-        opacity: 0,
-        duration: 1.8,
-        delay: 0.4,
-        onComplete: () => {
-          this.group.remove(burst)
-          burst.geometry.dispose()
-        }
-      })
+    const targets = this._clickTargets || this.boxGroup.children
+    const hits = this._raycaster.intersectObjects(targets, true)
+    if (hits.length > 0) {
+      this.openGift()
     }
   }
 
-  _revealTitle() {
-    this.titleGroup.visible = true
-    this.titleGroup.position.set(0, 0, -1.8)
+  openGift() {
+    if (this.opened || this.animating) return
+    this.opened = true
+    this.animating = true
+    this.manager.hideHint()
 
-    // Fade out gift box & notes
-    gsap.to(this.boxGroup.scale, { x: 0, y: 0, z: 0, duration: 0.6, ease: 'power2.in' })
-    this.noteSprites.forEach(({ sprite }) => {
-      gsap.to(sprite.material, { opacity: 0, duration: 0.4 })
+    const tl = gsap.timeline({
+      onComplete: () => {
+        this.animating = false
+        // Smoothly transition to photos scene
+        this.manager.transitionTo('photos')
+      }
     })
 
-    // Reset camera for title presentation
-    gsap.to(this.camera.position, { x: 0, y: 0, z: 8.4, duration: 1.5, ease: 'power2.out' })
+    // 1. Anticipation wobble
+    tl.to(this.boxGroup.rotation, { z: 0.08, duration: 0.12, ease: 'power1.inOut' })
+      .to(this.boxGroup.rotation, { z: -0.08, duration: 0.12, ease: 'power1.inOut' })
+      .to(this.boxGroup.rotation, { z: 0, duration: 0.12, ease: 'power1.inOut' })
 
-    // Title reveal stagger
-    this.titleGroup.children.forEach((c, i) => {
-      if (c.material) c.material.opacity = 0
-      gsap.to(c.material, { opacity: 1, duration: 0.9, delay: i * 0.35, ease: 'power2.out' })
-    })
+    // 2. Interior light bursts out
+    tl.to(this.interiorLight, { intensity: 80, duration: 0.4, ease: 'power2.out' }, '-=0.1')
 
-    this.manager.setHint('Usa la barra inferior para recorrer los recuerdos y sorpresas 👇', 6000)
+    // 3. Lid flips off and upwards
+    tl.to(this.lidPivot.rotation, { x: -Math.PI * 0.7, duration: 0.7, ease: 'back.out(1.4)' }, '-=0.3')
+    tl.to(this.lidPivot.position, { y: 2.2, z: -0.8, duration: 0.7, ease: 'power2.out' }, '<')
+
+    // 4. Camera zooms forward smoothly
+    tl.to(this.camera.position, { z: 3.8, y: 0.2, duration: 0.9, ease: 'power2.inOut' }, '-=0.4')
   }
 }

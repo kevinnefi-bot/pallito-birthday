@@ -1,12 +1,8 @@
 import * as THREE from 'three'
 import { gsap } from 'gsap'
 import {
-  makeTextSprite,
   makeGlowLight,
-  makeParticles,
-  createArcadeAuraMachine,
-  createDetailedDumbbell,
-  createAerodynamicHelmet
+  makeParticles
 } from '../utils/three-helpers.js'
 
 export class AuraScene {
@@ -17,159 +13,139 @@ export class AuraScene {
     this.group = new THREE.Group()
 
     this.measuring = false
+    this.gyroRings = []
 
     this.results = [
-      { score: '+10000', label: 'DE AURA. COCINASTE. 🔥' },
-      { score: '−10000', label: 'DE AURA. QUÉ NECESIDAD. 💀' },
-      { score: '+5000',  label: 'DE AURA. ACTUACIÓN DECENTE. 👏' },
-      { score: '−99999', label: 'DE AURA. NO VOY A EXPLICAR. 📉' },
-      { score: 'AURA EN', label: 'NÚMEROS ROJOS. ALERTA CRÍTICA. 🚨' },
-      { score: '+10000', label: 'POR EXISTIR. −10000 POR LAS DECISIONES. 🧠' }
+      {
+        score: '+10000',
+        title: 'DE AURA. COCINASTE. 🔥',
+        desc: 'Rendimiento legendario comprobado. Ninguna decisión cuestionable puede bajarte de este pedestal hoy.'
+      },
+      {
+        score: '−10000',
+        title: 'DE AURA. QUÉ NECESIDAD. 💀',
+        desc: 'Se detectó un fallo crítico en el sistema. Pero como es tu cumpleaños, te perdonamos el registro.'
+      },
+      {
+        score: '+5000',
+        title: 'ACTUACIÓN DECENTE 👏',
+        desc: 'Ni muy callada ni muy peligrosa. Balance perfecto para sobrevivir un año más con estilo.'
+      },
+      {
+        score: '−99999',
+        title: 'NO VOY A EXPLICAR 📉',
+        desc: 'Tú sabes perfectamente por qué. No me hagas sacar capturas del archivo histórico.'
+      },
+      {
+        score: '+10000',
+        title: 'POR EXISTIR. −10000 POR LAS DECISIONES 🧠',
+        desc: 'Equilibrio cuántico perfecto entre ser una persona increíble y hacer estupideces memorables.'
+      },
+      {
+        score: 'AURA ∞',
+        title: 'NIVEL DUKE MÁXIMO 👑',
+        desc: 'La escala colapsó por exceso de vibra. Eres intocable durante las próximas 24 horas.'
+      }
     ]
-
-    this.raycaster = new THREE.Raycaster()
-    this.pointer = new THREE.Vector2()
-    this._onClickBound = this._onClick.bind(this)
-    this._onTouchBound = this._onTouch.bind(this)
   }
 
   async init() {
     this._buildLights()
-    this._buildMachine()
-    this._buildGymProps()
-    this._buildMotoProps()
+    this._buildAuraCore()
     this._buildAtmosphere()
 
     this.group.visible = false
     this.scene.add(this.group)
 
-    const closeBtn = document.getElementById('aura-close')
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        document.getElementById('aura-overlay').classList.remove('open')
-      })
-    }
+    this._wireDOM()
   }
 
   _buildLights() {
-    const ambient = new THREE.AmbientLight(0x1a062e, 0.8)
-    const neonCyan = makeGlowLight(0x00f0ff, 110, 24, -3.5, 3.5, 2.5, 0.12)
-    const neonPink = makeGlowLight(0xff007f, 110, 24, 3.5, 3.5, 2.5, 0.12)
-    const keySpot = new THREE.SpotLight(0xfff5ea, 50)
-    keySpot.position.set(0, 8, 5)
-    keySpot.penumbra = 0.6
+    const ambient = new THREE.AmbientLight(0x18032b, 1.0)
+    this.cyanLight = makeGlowLight(0x00f0ff, 90, 20, -3.5, 2.5, 2, 0.14)
+    this.pinkLight = makeGlowLight(0xff007f, 90, 20, 3.5, 2.5, 2, 0.14)
+    const centerSpot = new THREE.SpotLight(0xfff5ea, 40)
+    centerSpot.position.set(0, 6, 5)
 
-    this.group.add(ambient, neonCyan, neonPink, keySpot)
+    this.group.add(ambient, this.cyanLight, this.pinkLight, centerSpot)
   }
 
-  _buildMachine() {
-    const machine = createArcadeAuraMachine()
-    this.machine = machine
-    this.buttonMesh = machine.buttonMesh
+  _buildAuraCore() {
+    this.coreGroup = new THREE.Group()
 
-    this.group.add(machine.group)
-
-    // Scrapbook Header Banner
-    const titleSprite = makeTextSprite('INSTITUTO INTERNACIONAL DEL AURA DE PALLITO ⚡\n«precisión científica: absolutamente ninguna»', {
-      fontSize: 38,
-      fontFace: 'Pacifico, cursive',
-      color: '#00f0ff',
-      bgColor: 'rgba(15, 2, 35, 0.88)',
-      borderColor: '#a855f7',
-      tapeTop: true,
-      padding: 20,
-      scale: 5.2
+    // Glowing crystal sphere in center
+    const sphereGeo = new THREE.IcosahedronGeometry(1.0, 3)
+    const sphereMat = new THREE.MeshStandardMaterial({
+      color: 0xa855f7,
+      emissive: 0x9333ea,
+      emissiveIntensity: 0.8,
+      roughness: 0.15,
+      metalness: 0.85,
+      wireframe: false
     })
-    titleSprite.position.set(0, 4.2, 0)
-    this.group.add(titleSprite)
+    this.coreSphere = new THREE.Mesh(sphereGeo, sphereMat)
+    this.coreGroup.add(this.coreSphere)
 
-    // Button Call-to-action
-    const btnSprite = makeTextSprite('💥 PRESIONA AQUÍ PARA MEDIR TU AURA 💥\n(diagnóstico oficial de Kev)', {
-      fontSize: 30,
-      color: '#ffffff',
-      fontFace: 'Indie Flower, cursive',
-      bold: true,
-      bgColor: 'rgba(255, 0, 85, 0.85)',
-      padding: 14,
-      scale: 1.8
+    // Inner wireframe sphere
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.4 })
+    const wireSphere = new THREE.Mesh(sphereGeo, wireMat)
+    wireSphere.scale.set(1.15, 1.15, 1.15)
+    this.coreGroup.add(wireSphere)
+
+    // 3 Concentric Gyro Rings
+    const ringConfigs = [
+      { radius: 1.6, tube: 0.04, color: 0xec4899, rx: 0.4, ry: 0 },
+      { radius: 2.1, tube: 0.035, color: 0x00f0ff, rx: -0.6, ry: 0.5 },
+      { radius: 2.6, tube: 0.03, color: 0xc084fc, rx: 0.8, ry: -0.4 }
+    ]
+
+    ringConfigs.forEach(cfg => {
+      const ringGeo = new THREE.TorusGeometry(cfg.radius, cfg.tube, 16, 64)
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: cfg.color,
+        emissive: cfg.color,
+        emissiveIntensity: 0.6,
+        roughness: 0.2
+      })
+      const ring = new THREE.Mesh(ringGeo, ringMat)
+      ring.rotation.x = cfg.rx
+      ring.rotation.y = cfg.ry
+      this.coreGroup.add(ring)
+      this.gyroRings.push(ring)
     })
-    btnSprite.position.set(0, -0.15, 2.3)
-    this.group.add(btnSprite)
-  }
 
-  _buildGymProps() {
-    const gymGroup = new THREE.Group()
-
-    // High detail dumbbell with hex plates & knurling
-    const dumbbell = createDetailedDumbbell()
-    gymGroup.add(dumbbell)
-
-    // Humorous Gym Sticker
-    const gymTag = makeTextSprite('«+10000 de aura por levantarla 💪»\n#no pain no gain #disciplina xd', {
-      fontSize: 26,
-      fontFace: 'Indie Flower, cursive',
-      color: '#ffd6ec',
-      bgColor: 'rgba(25, 5, 40, 0.85)',
-      borderColor: '#ec4899',
-      tapeTop: true,
-      padding: 12,
-      scale: 1.6
-    })
-    gymTag.position.set(0, 0.75, 0)
-    gymGroup.add(gymTag)
-
-    gymGroup.position.set(-3.8, -0.6, 1.2)
-    gymGroup.rotation.set(0.15, 0.55, -0.08)
-    this.group.add(gymGroup)
-  }
-
-  _buildMotoProps() {
-    const motoGroup = new THREE.Group()
-
-    // Aerodynamic Racing Helmet with iridescent rainbow visor
-    const helmet = createAerodynamicHelmet()
-    motoGroup.add(helmet)
-
-    // Humorous Moto Sticker
-    const motoTag = makeTextSprite('🏍️ «Protege la cabeza,\nno las decisiones»\n#muerte al makina xd okno', {
-      fontSize: 26,
-      fontFace: 'Indie Flower, cursive',
-      color: '#00f0ff',
-      bgColor: 'rgba(10, 20, 45, 0.88)',
-      borderColor: '#00f0ff',
-      tapeTop: true,
-      padding: 12,
-      scale: 1.8
-    })
-    motoTag.position.set(0, 0.95, 0)
-    motoGroup.add(motoTag)
-
-    motoGroup.position.set(3.8, -0.4, 1.0)
-    motoGroup.rotation.set(0.1, -0.5, 0.05)
-    this.group.add(motoGroup)
+    this.coreGroup.position.set(0, 0, -1)
+    this.group.add(this.coreGroup)
   }
 
   _buildAtmosphere() {
-    this.sparks = makeParticles(180, 22, 0x00f0ff, 0.05)
-    this.magentaDust = makeParticles(140, 20, 0xff00aa, 0.04)
-    this.group.add(this.sparks, this.magentaDust)
+    this.particles = makeParticles(160, 22, 0xc084fc, 0.04)
+    this.group.add(this.particles)
+  }
+
+  _wireDOM() {
+    const measureBtn = document.getElementById('btn-measure-aura')
+    const remeasureBtn = document.getElementById('btn-remeasure-aura')
+
+    if (measureBtn) {
+      measureBtn.addEventListener('click', () => this.measureAura())
+    }
+    if (remeasureBtn) {
+      remeasureBtn.addEventListener('click', () => this.measureAura())
+    }
   }
 
   async enter() {
     this.group.visible = true
-    this.camera.position.set(0, 1.4, 8.2)
+
+    this.camera.position.set(0, 0.4, 7.5)
     this.camera.lookAt(0, 0, 0)
-    gsap.from(this.camera.position, { z: 13.5, y: 3.5, duration: 1.6, ease: 'power3.out' })
+    gsap.from(this.camera.position, { z: 12, y: 2.5, duration: 1.2, ease: 'power3.out' })
 
-    this.manager.setHint('Toca el botón fucsia gigante para activar el detector de aura ⚡', 5000)
-
-    window.addEventListener('click', this._onClickBound)
-    window.addEventListener('touchend', this._onTouchBound, { passive: true })
+    this.manager.setHint('Pulsa el botón para calcular tu nivel de aura ⚡', 4000)
   }
 
   async exit() {
-    window.removeEventListener('click', this._onClickBound)
-    window.removeEventListener('touchend', this._onTouchBound)
     this.manager.hideHint()
     this.group.visible = false
   }
@@ -177,135 +153,59 @@ export class AuraScene {
   update(delta) {
     const t = performance.now() * 0.001
 
-    if (this.sparks) this.sparks.rotation.y += delta * 0.03
-    if (this.magentaDust) this.magentaDust.rotation.y -= delta * 0.025
+    if (this.particles) this.particles.rotation.y += delta * 0.02
 
-    // Plasma core rotating
-    if (this.machine?.plasmaCore) {
-      this.machine.plasmaCore.rotation.x += delta * 0.8
-      this.machine.plasmaCore.rotation.y += delta * 1.1
+    if (this.coreSphere) {
+      this.coreSphere.rotation.y += delta * 0.5
+      this.coreSphere.rotation.x = Math.sin(t) * 0.2
     }
 
-    // Vacuum tube filament subtle flickering
-    if (this.machine?.vacuumTubes) {
-      this.machine.vacuumTubes.forEach((tube, idx) => {
-        tube.filament.position.y = Math.sin(t * 3 + idx) * 0.02
-      })
-    }
-
-    // Idle gentle twitching of analog meter needle
-    if (!this.measuring && this.machine?.needlePivot) {
-      this.machine.needlePivot.rotation.z = Math.sin(t * 2.5) * 0.25 - 0.2
+    if (this.gyroRings.length === 3) {
+      const speedMult = this.measuring ? 4.5 : 1.0
+      this.gyroRings[0].rotation.x += delta * 0.7 * speedMult
+      this.gyroRings[1].rotation.y += delta * 0.9 * speedMult
+      this.gyroRings[2].rotation.z += delta * 0.5 * speedMult
     }
   }
 
-  _onClick(e) {
-    if (e.target.closest('#scene-nav') || e.target.closest('#aura-overlay')) return
-    const ndc = {
-      x: (e.clientX / window.innerWidth) * 2 - 1,
-      y: -(e.clientY / window.innerHeight) * 2 + 1
-    }
-    this._checkHit(ndc)
-  }
-
-  _onTouch(e) {
-    if (e.changedTouches[0].target.closest('#scene-nav')) return
-    const t = e.changedTouches[0]
-    const ndc = {
-      x: (t.clientX / window.innerWidth) * 2 - 1,
-      y: -(t.clientY / window.innerHeight) * 2 + 1
-    }
-    this._checkHit(ndc)
-  }
-
-  _checkHit(ndc) {
+  measureAura() {
     if (this.measuring) return
-    this.pointer.set(ndc.x, ndc.y)
-    this.raycaster.setFromCamera(this.pointer, this.camera)
-    const hits = this.raycaster.intersectObject(this.buttonMesh, true)
-    if (hits.length > 0) {
-      this._activateMachine()
-    }
+    this.measuring = true
+    this.manager.setHint('Calculando nivel cuántico de aura... 🔄', 2000)
+
+    const resultBox = document.getElementById('aura-card-result')
+    const badge = document.getElementById('aura-score-badge')
+    const title = document.getElementById('aura-score-title')
+    const desc = document.getElementById('aura-score-desc')
+
+    // Animate 3D core & lights intensely
+    gsap.to(this.coreSphere.scale, { x: 1.4, y: 1.4, z: 1.4, duration: 0.3, yoyo: true, repeat: 3 })
+
+    // Roll random numbers on badge
+    let rolls = 0
+    const rollInterval = setInterval(() => {
+      const randomScore = (Math.random() > 0.5 ? '+' : '−') + (Math.floor(Math.random() * 9000) + 1000)
+      if (badge) badge.textContent = randomScore
+      rolls++
+      if (rolls > 12) {
+        clearInterval(rollInterval)
+        this._showFinalResult(resultBox, badge, title, desc)
+      }
+    }, 80)
   }
 
-  _activateMachine() {
-    this.measuring = true
-    this.manager.setHint('Escaneando ondas cerebrales y decisiones cuestionables... 🔬')
+  _showFinalResult(resultBox, badge, title, desc) {
+    this.measuring = false
+    const randomPick = this.results[Math.floor(Math.random() * this.results.length)]
 
-    // Web Audio API sci-fi synthesizer sound effect
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext
-      if (AudioCtx) {
-        const ctx = new AudioCtx()
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.type = 'sawtooth'
-        osc.frequency.setValueAtTime(180, ctx.currentTime)
-        osc.frequency.exponentialRampToValueAtTime(950, ctx.currentTime + 1.2)
-        gain.gain.setValueAtTime(0.18, ctx.currentTime)
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5)
-        osc.start()
-        osc.stop(ctx.currentTime + 1.5)
-      }
-    } catch (_) {}
+    if (badge) badge.textContent = randomPick.score
+    if (title) title.textContent = randomPick.title
+    if (desc) desc.textContent = randomPick.desc
 
-    // 1. Mechanical Button Press with spring recoil
-    gsap.timeline()
-      .to(this.buttonMesh.position, { y: -0.84, duration: 0.12, ease: 'power2.in' })
-      .to(this.buttonMesh.position, { y: -0.74, duration: 0.28, ease: 'back.out(2.5)' })
-
-    // 2. Camera dramatic zoom toward machine core
-    gsap.to(this.camera.position, {
-      z: 5.4,
-      y: 0.9,
-      duration: 1.3,
-      ease: 'power2.inOut',
-      yoyo: true,
-      repeat: 1
-    })
-
-    // 3. Analog Gauge Needle frantic oscillation
-    if (this.machine.needlePivot) {
-      gsap.to(this.machine.needlePivot.rotation, {
-        z: 1.2,
-        duration: 0.1,
-        repeat: 12,
-        yoyo: true,
-        ease: 'sine.inOut'
-      })
+    if (resultBox) {
+      resultBox.classList.remove('hidden')
     }
 
-    // 4. LED Tower light cascade
-    if (this.machine.ledSegments) {
-      this.machine.ledSegments.forEach((led, i) => {
-        gsap.to(led.material, {
-          emissiveIntensity: 1.8,
-          duration: 0.15,
-          delay: i * 0.08,
-          repeat: 3,
-          yoyo: true
-        })
-      })
-    }
-
-    // 5. Plasma Core Turbo Spin
-    gsap.to(this.machine.plasmaCore.rotation, {
-      x: this.machine.plasmaCore.rotation.x + Math.PI * 6,
-      y: this.machine.plasmaCore.rotation.y + Math.PI * 6,
-      duration: 1.6,
-      ease: 'power1.inOut'
-    })
-
-    // 6. Reveal Funny Aura Result
-    setTimeout(() => {
-      this.measuring = false
-      const randomResult = this.results[Math.floor(Math.random() * this.results.length)]
-      document.getElementById('aura-score-text').textContent = randomResult.score
-      document.getElementById('aura-label-text').textContent = randomResult.label
-      document.getElementById('aura-overlay').classList.add('open')
-      this.manager.setHint('¡Medición completada! Resultado certificado por el Instituto de Aura ⚡', 4000)
-    }, 1600)
+    this.manager.setHint('Diagnóstico de aura completado ⚡', 3500)
   }
 }

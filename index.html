@@ -3,88 +3,258 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>🎂 Pallito Birthday Universe</title>
+  <title>🎂 Pallito Birthday — Edición Especial 2026</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>" />
+  
+  <!-- GOOGLE FONTS: Editorial & Scrapbook Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Indie+Flower&family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet" />
+  
   <script type="module" src="/src/main.js"></script>
 </head>
 <body>
+  <!-- 3D WEBGL CANVAS -->
   <canvas id="bg"></canvas>
 
   <!-- LOADING SCREEN -->
-  <div id="loader">
+  <div id="loader" class="loader-screen">
     <div class="loader-inner">
-      <div class="loader-box">🎁</div>
-      <div class="loader-text">cargando el universo de pallito...</div>
+      <div class="loader-icon-wrap">
+        <span class="loader-box">🎁</span>
+        <div class="loader-sparkles">✨</div>
+      </div>
+      <div class="loader-badge">EDICIÓN ESPECIAL 2026</div>
+      <h1 class="loader-title">Pallito Birthday Experience</h1>
+      <p class="loader-text">Preparando tu universo interactivo...</p>
       <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
     </div>
   </div>
 
   <!-- WEBGL FALLBACK -->
   <div id="no-webgl" style="display:none">
-    <div style="text-align:center;padding:40px;color:white;font-family:sans-serif">
+    <div class="no-webgl-box">
       <h2>🎂 Feliz Cumpleaños Pallito 🎂</h2>
-      <p>Tu navegador no soporta WebGL. Usa Chrome o Firefox para la experiencia 3D completa.</p>
+      <p>Tu navegador actual no tiene aceleración WebGL activa. Por favor ábrelo en Google Chrome o Firefox para disfrutar de toda la experiencia 3D y visual.</p>
     </div>
   </div>
 
-  <!-- SCENE NAV -->
-  <nav id="scene-nav">
-    <button class="nav-btn active" data-scene="intro"    title="Inicio">🎁</button>
-    <button class="nav-btn"       data-scene="photos"   title="Fotos">📸</button>
-    <button class="nav-btn"       data-scene="aura"     title="Aura">⚡</button>
-    <button class="nav-btn"       data-scene="letter"   title="Carta">💌</button>
-    <button class="nav-btn"       data-scene="final"    title="Final">🎂</button>
+  <!-- FLOATING GLOBAL NAVIGATION (5 SECCIONES) -->
+  <nav id="scene-nav" class="floating-nav" aria-label="Navegación de la experiencia">
+    <button class="nav-btn active" data-scene="intro" title="Inicio">
+      <span class="nav-btn-icon">🎁</span>
+      <span class="nav-btn-label">Inicio</span>
+    </button>
+    <button class="nav-btn" data-scene="photos" title="Galería de Fotos">
+      <span class="nav-btn-icon">📸</span>
+      <span class="nav-btn-label">Fotos</span>
+    </button>
+    <button class="nav-btn" data-scene="aura" title="Medidor de Aura">
+      <span class="nav-btn-icon">⚡</span>
+      <span class="nav-btn-label">Aura</span>
+    </button>
+    <button class="nav-btn" data-scene="letter" title="La Carta">
+      <span class="nav-btn-icon">💌</span>
+      <span class="nav-btn-label">Carta</span>
+    </button>
+    <button class="nav-btn" data-scene="final" title="Fiesta & Música">
+      <span class="nav-btn-icon">🎉</span>
+      <span class="nav-btn-label">Fiesta</span>
+    </button>
   </nav>
 
-  <!-- HINT OVERLAY -->
-  <div id="hint">
-    <span id="hint-text">Toca la caja para abrirla</span>
+  <!-- INTERACTIVE HINT -->
+  <div id="hint" class="hint-toast hidden">
+    <span id="hint-text">Toca la caja para abrirla ✨</span>
   </div>
 
-  <!-- LETTER OVERLAY -->
-  <div id="letter-overlay">
-    <div class="letter-paper">
-      <button id="letter-close">✕ cerrar</button>
-      <div class="letter-content">
-        <p class="letter-salute">Bueno, Pallito... xd.</p>
+  <!-- ================================================================= -->
+  <!-- SECCIONES HTML EDITORIALES SUPERPUESTAS A LA ESCENA 3D -->
+  <!-- ================================================================= -->
+  <main id="app-content">
 
-        <p>Como es Duke, obviamente no te iba a felicitar a las 00:00 y mandarte un testamento por WhatsApp, ni agarrar una plantilla de CapCut <span class="letter-sticker">🎬</span>, ponerte una canción triste y subirte a IG como hace todo el mundo. Mi guachita es celosa xd, okno.</p>
+    <!-- 1. SECCIÓN INICIO -->
+    <section id="scene-intro-ui" class="scene-overlay-ui active">
+      <div class="hero-card">
+        <div class="editorial-tag">✦ CUMPLEAÑOS 2026 · EXCLUSIVO PARA TI ✦</div>
+        <h1 class="hero-title">Feliz Cumpleaños,<br /><span class="highlight-title">Pallito</span></h1>
+        <p class="hero-subtitle">
+          Un rincón interactivo creado desde cero con código, detalles de amistad y cero plantillas genéricas.
+        </p>
+        <div class="hero-actions">
+          <button id="btn-open-gift" class="btn-primary">
+            <span class="btn-icon">🎁</span>
+            <span>Abrir Regalo</span>
+            <span class="btn-sparkle">✨</span>
+          </button>
+        </div>
+        <div class="hero-micro-hint">
+          <span>O haz clic directamente sobre la caja 3D</span>
+        </div>
+      </div>
+    </section>
 
-        <p>La verdad, sentía que eso no iba conmigo. Pero hacer una estupidez de estas — meterme a programar <em>una página entera en 3D</em> y complicarme la vida por gusto — eso sí es muy de mí JAJAJAJA. <span class="letter-sticker">🤖</span></p>
+    <!-- 2. SECCIÓN FOTOS (GALERÍA AMPLIABLE) -->
+    <section id="scene-photos-ui" class="scene-overlay-ui">
+      <div class="gallery-container">
+        <header class="section-header">
+          <div class="editorial-tag">ÁLBUM DE RECUERDOS · ARCHIVO PERSONAL</div>
+          <h2 class="section-heading">Galería Sagrada 📸</h2>
+          <p class="section-desc">
+            Momentos que valen más de +10000 de aura colectiva. Toca cualquier fotografía para ampliarla y ver sus detalles.
+          </p>
+        </header>
 
-        <p>Así que aquí estamos. Con mis conocimientos, un poco de IA y probablemente más horas de las que debería haber invertido en esto, te hice tu propio espacio en Internet. No preguntes cuánto me costó porque ni yo sé cómo llegué hasta aquí.</p>
+        <!-- GRID DINÁMICO GENERADO DESDE src/data/photos.js -->
+        <div class="photos-grid" id="photos-grid"></div>
 
-        <p>Ya sabes que te quiero un montón y que para mí eres una persona increíble. No hace falta que te haga una lista de las razones ni que te escriba las típicas frases de cumpleaños, porque eso ya te lo sabes.</p>
+        <div class="gallery-footer-note">
+          <span>✨ Galería ampliable · Diseñada para conservar todos nuestros momentos</span>
+        </div>
+      </div>
+    </section>
 
-        <p>Pero hay algo que sí quiero recordarte: <strong>siempre puedes contar conmigo.</strong> <span class="letter-sticker">💪</span></p>
+    <!-- 3. SECCIÓN AURA -->
+    <section id="scene-aura-ui" class="scene-overlay-ui">
+      <div class="aura-container">
+        <header class="section-header">
+          <div class="editorial-tag">INSTITUTO INTERNACIONAL DE VIBRA</div>
+          <h2 class="section-heading">El Medidor de Aura ⚡</h2>
+          <p class="section-desc">
+            Diagnóstico 100% científico, objetivo e inapelable expedido por Kev.
+          </p>
+        </header>
 
-        <p>Aunque últimamente no hayamos compartido tanto tiempo como antes, eso no significa que nuestra amistad se haya muerto, ni que te tenga menos aprecio. A veces cada uno anda en sus cosas, la vida cambia, los horarios no coinciden y terminamos hablando menos. Pero para mí eso no borra lo que hemos construido ni el cariño que te tengo.</p>
+        <div class="aura-interactive-card">
+          <div class="aura-energy-ring">
+            <div class="energy-glow"></div>
+            <div class="energy-icon">⚡</div>
+          </div>
+          
+          <div class="aura-prompt">
+            <h3>¿Cuál es tu nivel de aura hoy?</h3>
+            <p>Pulsa el botón cuántico para calcular la vibra exacta de tu día de cumpleaños.</p>
+          </div>
 
-        <p>Me alegra muchísimo haberte conocido y que formes parte de mi vida. Y aunque a veces los caminos no vayan uno al lado del otro, no significa que se hayan terminado. <span class="letter-sticker">🛤️</span> Podemos estar en etapas diferentes, tomar rutas distintas y aun así seguir estando para el otro.</p>
+          <button id="btn-measure-aura" class="btn-primary aura-pulse-btn">
+            <span class="btn-icon">⚡</span>
+            <span>Medir Mi Aura</span>
+          </button>
 
-        <p>No sé qué cosas nos esperan más adelante, pero sí quiero que tengas claro que aquí tienes a Kev. Para hablar, reírnos, hacer estupideces, pedir ayuda o simplemente estar cuando lo necesites.</p>
+          <!-- TARJETA DE RESULTADO DINÁMICO -->
+          <div id="aura-card-result" class="aura-result-display hidden">
+            <div class="result-score-badge" id="aura-score-badge">+10000</div>
+            <h4 class="result-title" id="aura-score-title">DE AURA. COCINASTE. 🔥</h4>
+            <p class="result-explanation" id="aura-score-desc">
+              Rendimiento legendario comprobado. Ninguna decisión cuestionable puede bajarte de este pedestal hoy.
+            </p>
+            <button id="btn-remeasure-aura" class="btn-secondary">
+              <span>🔄 Medir de nuevo</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <p>Y bueno, tampoco voy a ponerme más sentimental porque luego te crees importante y ganas demasiado aura.</p>
+    <!-- 4. SECCIÓN CARTA -->
+    <section id="scene-letter-ui" class="scene-overlay-ui">
+      <div class="letter-intro-box">
+        <div class="editorial-tag">MENSAJE PERSONAL AUTÉNTICO</div>
+        <h2 class="section-heading">La Carta 💌</h2>
+        <p class="section-desc">
+          Lo que de verdad quería decirte, sin rodeos ni frases prefabricadas.
+        </p>
+        <button id="btn-open-letter-overlay" class="btn-primary">
+          <span class="btn-icon">💌</span>
+          <span>Desplegar Carta</span>
+        </button>
+        <div class="hero-micro-hint">
+          <span>O toca directamente el sobre 3D con sello de cera</span>
+        </div>
+      </div>
+    </section>
 
-        <p class="letter-closing"><strong>Feliz cumpleaños, Pallito las patas. Te quiero mucho, loca. Gracias por ser parte de mi vida.</strong></p>
+    <!-- 5. SECCIÓN FIESTA & FINAL -->
+    <section id="scene-final-ui" class="scene-overlay-ui">
+      <div class="celebration-card">
+        <div class="editorial-tag">PISTA DE CELEBRACIÓN · 2026</div>
+        <h2 class="celebration-title">¡Feliz Cumpleaños,<br /><span class="highlight-title">Pallito!</span> 🎂💜</h2>
+        
+        <div class="celebration-quotes">
+          <p class="quote-main">
+            «Bueno, ya está. Te hice toda una página personalizada, así que espero mínimo <strong>+10000 de aura</strong> para mí.»
+          </p>
+          <p class="quote-sig">
+            «Feliz cumpleaños, loca. Te quiero un montón.<br />
+            <strong>— Kev, yo pues quién más xd 💜</strong>»
+          </p>
+          <div class="quote-hashtag">#Muerte al Makina xd okno</div>
+        </div>
 
-        <p class="letter-hashtag">#Muerte al Makina xd okno</p>
+        <div class="celebration-actions">
+          <button id="btn-party-music" class="btn-primary music-highlight-btn">
+            <span class="btn-icon">🎶</span>
+            <span>Escuchar "Just Dance" de Lady Gaga</span>
+          </button>
+          <div class="celebration-sub-actions">
+            <button id="btn-back-to-photos" class="btn-secondary">
+              <span>📸 Ver Galería</span>
+            </button>
+            <button id="btn-back-to-letter" class="btn-secondary">
+              <span>💌 Releer Carta</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <p class="letter-sig">— Kev, yo pues quién más xd 💜</p>
+  </main>
+
+  <!-- ================================================================= -->
+  <!-- MODAL / OVERLAY: CARTA ORIGINAL COMPLETA RECUPERADA -->
+  <!-- ================================================================= -->
+  <div id="letter-overlay" class="letter-overlay" role="dialog" aria-modal="true" aria-label="Carta de cumpleaños">
+    <div class="letter-backdrop" id="letter-backdrop"></div>
+    <div class="letter-stationery">
+      <div class="letter-washi-tape"></div>
+      <button id="letter-close" class="letter-close-btn" aria-label="Cerrar carta">✕ Cerrar</button>
+
+      <div class="letter-scroll-area">
+        <header class="letter-head">
+          <span class="letter-seal-stamp">💜</span>
+          <div class="letter-meta-date">Octubre 2026 · Para Pallito</div>
+        </header>
+
+        <div class="letter-content">
+          <p class="letter-salute">Bueno, Pallito... xd.</p>
+
+          <p>Como es Duke, obviamente no te iba a felicitar a las 00:00 y mandarte un testamento por WhatsApp, ni agarrar una plantilla de CapCut <span class="letter-sticker">🎬</span>, ponerte una canción triste y subirte a IG como hace todo el mundo. Mi guachita es celosa xd, okno.</p>
+
+          <p>La verdad, sentía que eso no iba conmigo. Pero hacer una estupidez de estas — meterme a programar <em>una página entera en 3D</em> y complicarme la vida por gusto — eso sí es muy de mí JAJAJAJA. <span class="letter-sticker">🤖</span></p>
+
+          <p>Así que aquí estamos. Con mis conocimientos, un poco de IA y probablemente más horas de las que debería haber invertido en esto, te hice tu propio espacio en Internet. No preguntes cuánto me costó porque ni yo sé cómo llegué hasta aquí.</p>
+
+          <p>Ya sabes que te quiero un montón y que para mí eres una persona increíble. No hace falta que te haga una lista de las razones ni que te escriba las típicas frases de cumpleaños, porque eso ya te lo sabes.</p>
+
+          <p>Pero hay algo que sí quiero recordarte: <strong>siempre puedes contar conmigo.</strong> <span class="letter-sticker">💪</span></p>
+
+          <p>Aunque últimamente no hayamos compartido tanto tiempo como antes, eso no significa que nuestra amistad se haya muerto, ni que te tenga menos aprecio. A veces cada uno anda en sus cosas, la vida cambia, los horarios no coinciden y terminamos hablando menos. Pero para mí eso no borra lo que hemos construido ni el cariño que te tengo.</p>
+
+          <p>Me alegra muchísimo haberte conocido y que formes parte de mi vida. Y aunque a veces los caminos no vayan uno al lado del otro, no significa que se hayan terminado. <span class="letter-sticker">🛤️</span> Podemos estar en etapas diferentes, tomar rutas distintas y aun así seguir estando para el otro.</p>
+
+          <p>No sé qué cosas nos esperan más adelante, pero sí quiero que tengas claro que aquí tienes a Kev. Para hablar, reírnos, hacer estupideces, pedir ayuda o simplemente estar cuando lo necesites.</p>
+
+          <p>Y bueno, tampoco voy a ponerme más sentimental porque luego te crees importante y ganas demasiado aura.</p>
+
+          <p class="letter-closing"><strong>Feliz cumpleaños, Pallito las patas. Te quiero mucho, loca. Gracias por ser parte de mi vida.</strong></p>
+
+          <p class="letter-hashtag">#Muerte al Makina xd okno</p>
+
+          <p class="letter-sig">— Kev, yo pues quién más xd 💜</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- AURA RESULT OVERLAY -->
-  <div id="aura-overlay">
-    <div class="aura-result-box">
-      <div class="aura-result-score" id="aura-score-text">+10000</div>
-      <div class="aura-result-label" id="aura-label-text">DE AURA. COCINASTE.</div>
-      <button id="aura-close">OK dale</button>
-    </div>
-  </div>
 </body>
 </html>
